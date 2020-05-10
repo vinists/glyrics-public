@@ -34,7 +34,7 @@ class composer:
                 try:
                     name = name.replace(name[name.index(char)], "")
                 except Exception:
-                    print("Exception at charRemover")
+                    print("Exception at charRemover with:", name, "/ Exception:", Exception)
                     continue
         if("  " in name):
             return self.asciifix(name.replace("  ", " "))
