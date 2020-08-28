@@ -25,7 +25,7 @@ class composer:
             return normalize("NFD", word).encode("ascii", "ignore").decode("utf-8")
 
     def charRemover(self, name):
-        for char in ["'", "?", "!", ".", ",", "’", "(", ")", ":", "&", "/"]:
+        for char in ["'", "?", "!", ".", ",", "’", "(", ")", ":", "&", "/", "ç"]:
             if(char in name):
                 if(char == "&"):
                     name = name.replace(name[name.index(char)], "and")

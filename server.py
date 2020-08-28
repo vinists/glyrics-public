@@ -4,6 +4,7 @@ from threading import Thread, Event, active_count
 from flask import Flask, render_template, url_for, session, request, redirect
 from flask_socketio import SocketIO, join_room, close_room
 from flask_cors import CORS
+from flask_talisman import Talisman
 
 from gevent import GreenletExit
 
@@ -16,9 +17,20 @@ from util import composer, rndstring
 
 app = Flask(__name__)
 CORS(app)
+
 app.config['SECRET_KEY'] = environ['SECRET_KEY']
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+
+csp = {
+    'default-src':[
+        '\'self\'',
+        '*.jquery.com',
+        '*.cloudflare.com',
+        '*.bootstrapcdn.com'
+    ]
+}
+Talisman(app, content_security_policy=csp)
 
 API_BASE = 'https://accounts.spotify.com'
 REDIRECT_URI = "https://glyrics.herokuapp.com/auth"
@@ -38,12 +50,9 @@ socketio = SocketIO(app, async_mode=None, logger=True, cookie=None, engineio_log
 sp = SpotifyOAuth(client_id=CLI_ID,client_secret=CLI_SEC,
                         redirect_uri=REDIRECT_URI,cache_path=CACHE, scope=SCOPE)
 
-
-
 thread = None
-thread_stop_event = Event()
 
-
+# Async Thread
 
 def finder(token_full, room):
     
@@ -59,7 +68,7 @@ def finder(token_full, room):
                     socketio.emit('newsong', data=({'lyricsBody': 
                                             composer(artist, song).returner()}),
                                             namespace='/data', room=room)
-        except (spotipy.client.SpotifyException, GreenletExit) as e:
+        except (spotipy.client.SpotifyException, GreenletExit, TypeError) as e:
             print("Exception: ", e)
             if(is_token_expired(token_full)):
                 print("Token refreshing auto")
@@ -67,8 +76,7 @@ def finder(token_full, room):
             if(type(e) is GreenletExit):
                 break
 
-                
-   
+
 def lyrics_connect():
     join_room(session.get('room'))
     global thread
@@ -79,7 +87,6 @@ def lyrics_connect():
     except Exception:
         print('lyrics_connect exception:', Exception)
         pass
-
 
 @app.route('/', methods=['GET'])
 def index():
